@@ -357,6 +357,7 @@
             if (navDesktop) {
                 navDesktop.innerHTML = `
                     <a href="/admin">⚙️ Catálogo</a>
+                    <a href="/admin/inventario/insumos">📦 Insumos</a>
                     <a href="/admin/sucursales">🏢 Sucursales</a>
                     <a href="/admin/areas-mesas">🏛️ Áreas y Mesas</a>
                     <a href="/admin/reservas">📅 Reservas</a>
@@ -369,6 +370,7 @@
                 footerNavCol.innerHTML = `
                     <h4>Administración</h4>
                     <a href="/admin">Panel General (Catálogo)</a>
+                    <a href="/admin/inventario/insumos">Gestión de Insumos / Productos Base</a>
                     <a href="/admin/sucursales">Gestión de Sucursales</a>
                     <a href="/admin/areas-mesas">Gestión de Áreas y Mesas</a>
                     <a href="/admin/reservas">Gestión de Reservas</a>

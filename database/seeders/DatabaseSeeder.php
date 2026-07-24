@@ -279,11 +279,12 @@ class DatabaseSeeder extends Seeder
             ['id' => 9, 'product_id' => 9, 'stock' => 10, 'min_stock' => 2, 'created_at' => now(), 'updated_at' => now()],
         ]);
 
-        // 12. Run Additional Seeders for Roles, Branches & Reservations
+        // 12. Run Additional Seeders for Roles, Branches, Reservations & Insumos
         $this->call([
             RoleSeeder::class,
             SucursalSeeder::class,
             ReservationSeeder::class,
+            InsumoSeeder::class,
         ]);
     }
 }

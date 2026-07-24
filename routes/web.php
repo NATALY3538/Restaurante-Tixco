@@ -9,6 +9,7 @@ use App\Http\Controllers\AdminAuthController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SucursalController;
 use App\Http\Controllers\ReservationController;
+use App\Http\Controllers\InsumoController;
 use Illuminate\Support\Facades\Route;
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -22,6 +23,8 @@ Route::get('/', function () {
 Route::get('/menu', function () {
     return view('menu.index');
 });
+
+Route::get('/admin/inventario/insumos', [InsumoController::class, 'index']);
 
 Route::get('/menu/detalle/{slug}', function ($slug) {
     return view('menu.detalle', ['slug' => $slug]);
@@ -189,4 +192,10 @@ Route::prefix('api')->group(function () {
 
     // CU-5.2.3: Split Bill
     Route::post('/admin/mesas/cobrar-split', [MesaController::class, 'cobrarSplit']);
+
+    // Insumos / Productos Base API (Admin)
+    Route::get('/admin/insumos', [InsumoController::class, 'getInsumos']);
+    Route::post('/admin/insumos', [InsumoController::class, 'store']);
+    Route::put('/admin/insumos/{id}', [InsumoController::class, 'update']);
+    Route::delete('/admin/insumos/{id}', [InsumoController::class, 'destroy']);
 });
