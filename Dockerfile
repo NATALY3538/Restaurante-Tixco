@@ -17,6 +17,8 @@ FROM php:8.3-cli-alpine
 RUN apk add --no-cache \
     bash \
     curl \
+    sqlite-dev \
+    sqlite \
     libpng-dev \
     libjpeg-turbo-dev \
     freetype-dev \
@@ -32,6 +34,7 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j$(nproc) \
         pdo \
         pdo_mysql \
+        pdo_sqlite \
         mbstring \
         gd \
         xml \
