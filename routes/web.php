@@ -139,6 +139,8 @@ Route::prefix('api')->group(function () {
     Route::post('/admin/productos', [AdminController::class, 'createProducto']);
     Route::put('/admin/productos/{id}', [AdminController::class, 'updateProducto']);
     Route::delete('/admin/productos/{id}', [AdminController::class, 'deleteProducto']);
+    Route::get('/admin/modificadores', [AdminController::class, 'getModificadores']);
+    Route::post('/admin/modificadores', [AdminController::class, 'createModifierGroup']);
     Route::get('/admin/inventario/movimientos', [AdminController::class, 'getMovimientos']);
 
     // Mermas API

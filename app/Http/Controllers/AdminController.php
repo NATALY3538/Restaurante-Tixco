@@ -17,8 +17,50 @@ class AdminController extends Controller
     // GET /api/admin/productos
     public function getProductos()
     {
-        $products = Product::with(['category', 'inventory'])->get();
+        $products = Product::with(['category', 'inventory', 'modifierGroups.modifiers'])->get();
         return response()->json($products);
+    }
+
+    // GET /api/admin/modificadores
+    public function getModificadores()
+    {
+        $groups = \App\Models\ModifierGroup::with('modifiers')->where('is_active', true)->get();
+        return response()->json($groups);
+    }
+
+    // POST /api/admin/modificadores
+    public function createModifierGroup(Request $request)
+    {
+        $data = $request->validate([
+            'name' => 'required|string|max:100',
+            'min_selection' => 'nullable|integer|min:0',
+            'max_selection' => 'nullable|integer|min:1',
+            'is_required' => 'nullable|boolean',
+            'modifiers' => 'required|array|min:1',
+            'modifiers.*.name' => 'required|string|max:100',
+            'modifiers.*.price_delta' => 'required|numeric|min:0'
+        ]);
+
+        return DB::transaction(function () use ($data) {
+            $group = \App\Models\ModifierGroup::create([
+                'name' => $data['name'],
+                'min_selection' => $data['min_selection'] ?? 0,
+                'max_selection' => $data['max_selection'] ?? 1,
+                'is_required' => $data['is_required'] ?? false,
+                'is_active' => true
+            ]);
+
+            foreach ($data['modifiers'] as $m) {
+                \App\Models\Modifier::create([
+                    'modifier_group_id' => $group->id,
+                    'name' => $m['name'],
+                    'price_delta' => $m['price_delta'],
+                    'is_active' => true
+                ]);
+            }
+
+            return response()->json($group->load('modifiers'), 201);
+        });
     }
 
     // POST /api/admin/productos
@@ -35,7 +77,9 @@ class AdminController extends Controller
             'is_spicy' => 'nullable|boolean',
             'is_gluten_free' => 'nullable|boolean',
             'is_featured' => 'nullable|boolean',
-            'stock' => 'nullable|integer|min:0'
+            'stock' => 'nullable|integer|min:0',
+            'modifier_group_ids' => 'nullable|array',
+            'modifier_group_ids.*' => 'integer'
         ]);
 
         return DB::transaction(function () use ($data) {
@@ -62,6 +106,10 @@ class AdminController extends Controller
                 'is_active' => true,
             ]);
 
+            if (!empty($data['modifier_group_ids'])) {
+                $product->modifierGroups()->sync($data['modifier_group_ids']);
+            }
+
             $stock = $data['stock'] ?? 50;
 
             ProductInventory::create([
@@ -77,7 +125,7 @@ class AdminController extends Controller
                 'notes' => 'Carga inicial del producto'
             ]);
 
-            return response()->json($product->load('inventory'), 201);
+            return response()->json($product->load(['inventory', 'modifierGroups.modifiers']), 201);
         });
     }
 
@@ -98,7 +146,9 @@ class AdminController extends Controller
             'is_gluten_free' => 'nullable|boolean',
             'is_featured' => 'nullable|boolean',
             'is_active' => 'nullable|boolean',
-            'stock' => 'required|integer|min:0'
+            'stock' => 'required|integer|min:0',
+            'modifier_group_ids' => 'nullable|array',
+            'modifier_group_ids.*' => 'integer'
         ]);
 
         return DB::transaction(function () use ($request, $product, $data) {
@@ -116,6 +166,10 @@ class AdminController extends Controller
                 'is_featured' => $data['is_featured'] ?? false,
                 'is_active' => $data['is_active'] ?? true,
             ]);
+
+            if (isset($data['modifier_group_ids'])) {
+                $product->modifierGroups()->sync($data['modifier_group_ids']);
+            }
 
             // Update inventory
             $inventory = ProductInventory::firstOrCreate(
@@ -139,7 +193,7 @@ class AdminController extends Controller
                 ]);
             }
 
-            return response()->json($product->load('inventory'));
+            return response()->json($product->load(['inventory', 'modifierGroups.modifiers']));
         });
     }
 

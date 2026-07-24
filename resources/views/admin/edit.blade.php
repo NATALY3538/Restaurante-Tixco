@@ -85,6 +85,13 @@
                         <input type="checkbox" id="chkFeatured">
                         <span style="margin-left:var(--sp-xs);">⭐ Destacado</span>
                     </label>
+            <!-- Extras & Modifier Groups -->
+            <div style="margin-top:var(--sp-lg); margin-bottom:var(--sp-xl); padding-top:var(--sp-lg); border-top:1px solid var(--clr-border);">
+                <label class="form-label" style="margin-bottom:4px; font-weight:700; color:var(--clr-primary);">🍔 Extras e Insumos Personalizables Habilitados</label>
+                <span class="form-hint" style="display:block; margin-bottom:var(--sp-sm);">Selecciona los grupos de extras e insumos opcionales que el cliente podrá añadir desde su carrito/menú</span>
+                
+                <div id="modifierGroupsContainer" style="display:flex; flex-direction:column; gap:var(--sp-sm);">
+                    <p style="font-size:0.85rem; color:var(--clr-text-secondary);">Cargando grupos de extras e insumos...</p>
                 </div>
             </div>
 
@@ -101,9 +108,12 @@
 <script>
 const productId = '{{ $id }}';
 let categories = [];
+let allModGroups = [];
+let assignedGroupIds = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
     await loadCategories();
+    await loadModGroups();
     loadProductData();
 });
 
@@ -118,6 +128,44 @@ async function loadCategories() {
     } catch (err) {
         Toast.error('Error al cargar categorías');
     }
+}
+
+async function loadModGroups() {
+    try {
+        allModGroups = await apiFetch('/admin/modificadores');
+    } catch (err) {
+        console.error('Error al cargar grupos de modificadores', err);
+    }
+}
+
+function renderModGroupCheckboxes() {
+    const container = document.getElementById('modifierGroupsContainer');
+    if (!allModGroups || allModGroups.length === 0) {
+        container.innerHTML = `<p style="font-size:0.85rem; color:var(--clr-text-secondary);">No hay grupos de extras registrados.</p>`;
+        return;
+    }
+
+    container.innerHTML = allModGroups.map(g => {
+        const isChecked = assignedGroupIds.includes(g.id) ? 'checked' : '';
+        const modsListStr = (g.modifiers || []).map(m => {
+            const costStr = m.priceDelta > 0 ? `(+$${m.priceDelta.toFixed(2)})` : '(Incluido)';
+            return `${m.name} ${costStr}`;
+        }).join(', ');
+
+        return `
+        <label class="modifier-option" style="padding:var(--sp-sm) var(--sp-md); border-radius:var(--radius-md); border:1px solid var(--clr-border); display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
+            <div style="display:flex; align-items:center; gap:var(--sp-sm);">
+                <input type="checkbox" class="chk-mod-group" value="${g.id}" ${isChecked} style="width:18px; height:18px; accent-color:var(--clr-primary);">
+                <div>
+                    <strong style="color:var(--clr-text); font-size:0.9rem;">${g.name}</strong>
+                    <span style="font-size:0.78rem; color:var(--clr-text-secondary); display:block;">Opción: ${modsListStr || 'Sin extras'}</span>
+                </div>
+            </div>
+            <span style="font-size:0.75rem; background:var(--clr-surface-2); padding:3px 8px; border-radius:4px; border:1px solid var(--clr-border);">
+                ${g.isRequired ? 'Obligatorio' : 'Opcional'}
+            </span>
+        </label>`;
+    }).join('');
 }
 
 async function loadProductData() {
@@ -137,6 +185,9 @@ async function loadProductData() {
         document.getElementById('chkSpicy').checked = !!p.is_spicy;
         document.getElementById('chkGlutenFree').checked = !!p.is_gluten_free;
         document.getElementById('chkFeatured').checked = !!p.is_featured;
+
+        assignedGroupIds = (p.modifierGroups || []).map(g => g.id);
+        renderModGroupCheckboxes();
     } catch (err) {
         Toast.error('Error al cargar los datos del platillo');
     }
@@ -144,6 +195,11 @@ async function loadProductData() {
 
 async function saveProductChanges(e) {
     e.preventDefault();
+
+    const selectedModGroupIds = [];
+    document.querySelectorAll('.chk-mod-group:checked').forEach(cb => {
+        selectedModGroupIds.push(parseInt(cb.value));
+    });
 
     const body = {
         name: document.getElementById('prodName').value.trim(),
@@ -157,7 +213,8 @@ async function saveProductChanges(e) {
         is_gluten_free: document.getElementById('chkGlutenFree').checked,
         is_featured: document.getElementById('chkFeatured').checked,
         is_active: document.getElementById('prodStatus').value === "1",
-        stock: parseInt(document.getElementById('prodStock').value)
+        stock: parseInt(document.getElementById('prodStock').value),
+        modifier_group_ids: selectedModGroupIds
     };
 
     const btn = document.getElementById('btnSaveProduct');
