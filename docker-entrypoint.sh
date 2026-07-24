@@ -9,9 +9,7 @@ if [ "$DB_CONNECTION" = "mysql" ] && [ "$DB_HOST" != "127.0.0.1" ] && [ "$DB_HOS
     if php artisan db:monitor > /dev/null 2>&1 || php artisan migrate:status > /dev/null 2>&1; then
         echo "MySQL Connection successful!"
         php artisan migrate --force
-        php artisan db:seed --class=RoleSeeder --force || true
-        php artisan db:seed --class=SucursalSeeder --force || true
-        php artisan db:seed --class=ReservationSeeder --force || true
+        php artisan db:seed --force || true
     else
         echo "⚠️ Could not connect to MySQL at $DB_HOST. Falling back to SQLite."
         USE_SQLITE=1
@@ -32,9 +30,7 @@ if [ "$USE_SQLITE" = "1" ]; then
 
     echo "Running SQLite migrations & initial seeders..."
     php artisan migrate --force
-    php artisan db:seed --class=RoleSeeder --force || true
-    php artisan db:seed --class=SucursalSeeder --force || true
-    php artisan db:seed --class=ReservationSeeder --force || true
+    php artisan db:seed --force || true
 fi
 
 # Optimize Laravel caching for production
